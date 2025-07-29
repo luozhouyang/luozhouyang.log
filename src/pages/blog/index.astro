@@ -6,109 +6,104 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import { getCollection } from 'astro:content';
 import FormattedDate from '../../components/FormattedDate.astro';
 import { Image } from 'astro:assets';
+import Card from '../../components/ui/Card.astro';
+import CardHeader from '../../components/ui/CardHeader.astro';
+import CardTitle from '../../components/ui/CardTitle.astro';
+import CardDescription from '../../components/ui/CardDescription.astro';
+import CardContent from '../../components/ui/CardContent.astro';
+import CardFooter from '../../components/ui/CardFooter.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+
+// Get all unique tags
+const allTags = [...new Set(posts.flatMap(post => post.data.tags || []))].sort();
+
+// Count posts per tag
+const tagCounts: Record<string, number> = allTags.reduce((acc: Record<string, number>, tag: string) => {
+	const count = posts.filter(post => post.data.tags?.includes(tag)).length;
+	acc[tag] = count;
+	return acc;
+}, {});
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
 	</head>
-	<body>
+	<body class="min-h-screen bg-background font-sans antialiased">
 		<Header />
-		<main>
-			<section>
-				<ul>
-					{
-						posts.map((post) => (
-							<li>
-								<a href={`/blog/${post.id}/`}>
-									{post.data.heroImage && (
-										<Image width={720} height={360} src={post.data.heroImage} alt="" />
-									)}
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
-								</a>
-							</li>
-						))
-					}
-				</ul>
-			</section>
-		</main>
+		<div class="container grid grid-cols-1 gap-12 md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr] py-8">
+			{allTags.length > 0 && (
+				<aside class="hidden w-full flex-col md:flex">
+					<Card>
+						<CardHeader>
+							<CardTitle>Tags</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div class="space-y-2">
+								<Button variant="outline" size="sm" class="w-full justify-between" asChild>
+									<a href="/blog/" class="font-medium">
+										<span>All Posts</span>
+										<Badge variant="secondary" class="ml-auto">{posts.length}</Badge>
+									</a>
+								</Button>
+								{allTags.map(tag => (
+									<Button variant="ghost" size="sm" class="w-full justify-between" asChild>
+										<a href={`/blog/tags/${tag}`}>
+											<span>{tag}</span>
+											<Badge variant="secondary" class="ml-auto">{tagCounts[tag]}</Badge>
+										</a>
+									</Button>
+								))}
+							</div>
+						</CardContent>
+					</Card>
+				</aside>
+			)}
+			<main class="space-y-6">
+				<div class="space-y-8">
+					<div class="text-center mb-8">
+						<h1 class="text-4xl font-bold mb-4">Blog</h1>
+						<p class="text-lg text-muted-foreground">
+							Welcome to my blog! Here you'll find articles about web development, technology, and other topics I'm passionate about.
+						</p>
+					</div>
+					<div class="space-y-6">
+						{
+							posts.map((post) => (
+								<article class="border-b border-border pb-6 last:border-b-0">
+									<a href={`/blog/${post.id}/`} class="block group">
+										<h2 class="text-2xl font-semibold mb-2 group-hover:text-primary transition-colors">
+											{post.data.title}
+										</h2>
+										<div class="text-sm text-muted-foreground mb-3">
+											<FormattedDate date={post.data.pubDate} />
+										</div>
+										<p class="text-muted-foreground mb-4 leading-relaxed">
+											{post.data.description}
+										</p>
+										{post.data.tags && post.data.tags.length > 0 && (
+											<div class="flex flex-wrap gap-2">
+												{post.data.tags.map(tag => (
+													<Badge variant="outline" size="sm" asChild>
+														<a href={`/blog/tags/${tag}`} class="hover:bg-primary hover:text-primary-foreground transition-colors">{tag}</a>
+													</Badge>
+												))}
+											</div>
+										)}
+									</a>
+								</article>
+							))
+						}
+					</div>
+				</div>
+			</main>
+		</div>
 		<Footer />
 	</body>
 </html>
