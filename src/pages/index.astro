@@ -2,29 +2,36 @@
 import { getCollection } from "astro:content";
 import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
-import FormattedDate from "../components/FormattedDate.astro";
 import Header from "../components/Header.astro";
 import Badge from "../components/ui/Badge.astro";
-import Button from "../components/ui/Button.astro";
-import Card from "../components/ui/Card.astro";
-import CardContent from "../components/ui/CardContent.astro";
-import CardHeader from "../components/ui/CardHeader.astro";
-import CardTitle from "../components/ui/CardTitle.astro";
+
+import FormattedDate from "../components/FormattedDate.astro";
+import Pagination from "../components/Pagination.astro";
+import TagsSidebar from "../components/TagsSidebar.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 
-const posts = (await getCollection("blog")).sort(
+const POSTS_PER_PAGE = 10;
+
+const allPosts = (await getCollection("blog")).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
 
+// Pagination logic
+const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
+const currentPage = 1;
+const posts = allPosts.slice(0, POSTS_PER_PAGE);
+
 // Get all unique tags
 const allTags = [
-  ...new Set(posts.flatMap((post) => post.data.tags || [])),
+  ...new Set(allPosts.flatMap((post) => post.data.tags || [])),
 ].sort();
 
 // Count posts per tag
 const tagCounts: Record<string, number> = allTags.reduce(
   (acc: Record<string, number>, tag: string) => {
-    const count = posts.filter((post) => post.data.tags?.includes(tag)).length;
+    const count = allPosts.filter((post) =>
+      post.data.tags?.includes(tag)
+    ).length;
     acc[tag] = count;
     return acc;
   },
@@ -37,55 +44,22 @@ const tagCounts: Record<string, number> = allTags.reduce(
   <head>
     <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
   </head>
-  <body class="min-h-screen bg-background font-sans antialiased">
+  <body class="min-h-screen bg-background font-sans antialiased flex flex-col">
     <Header />
-    <div
-      class="container grid grid-cols-1 gap-12 md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr] py-8"
-    >
-      {
-        allTags.length > 0 && (
-          <aside class="hidden w-full flex-col md:flex">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tags</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div class="space-y-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    class="w-full justify-between"
-                    asChild
-                  >
-                    <a href="/" class="font-medium">
-                      <span>All Posts</span>
-                      <Badge variant="secondary" class="ml-auto">
-                        {posts.length}
-                      </Badge>
-                    </a>
-                  </Button>
-                  {allTags.map((tag) => (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      class="w-full justify-between"
-                      asChild
-                    >
-                      <a href={`/blog/tags/${tag}`}>
-                        <span>{tag}</span>
-                        <Badge variant="secondary" class="ml-auto">
-                          {tagCounts[tag]}
-                        </Badge>
-                      </a>
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </aside>
-        )
-      }
-      <main class="space-y-6">
+    <div class="container py-8 flex-1">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        {
+          allTags.length > 0 && (
+            <aside class="md:col-span-1">
+              <TagsSidebar
+                allTags={allTags}
+                tagCounts={tagCounts}
+                allPostsCount={allPosts.length}
+              />
+            </aside>
+          )
+        }
+        <main class="md:col-span-3 space-y-6">
         <div class="space-y-8">
           <div class="text-center mb-8">
             <h1 class="text-4xl font-bold mb-4">Blog</h1>
@@ -94,10 +68,14 @@ const tagCounts: Record<string, number> = allTags.reduce(
               development, technology, and other topics I'm passionate about.
             </p>
           </div>
+
           <div class="space-y-6">
             {
               posts.map((post) => (
-                <article class="border-b border-border pb-6 last:border-b-0">
+                <article 
+                  class="border-b border-border pb-6 last:border-b-0 blog-post" 
+                  data-tags={post.data.tags ? post.data.tags.join(',') : ''}
+                >
                   <a href={`/blog/${post.id}/`} class="block group">
                     <h2 class="text-2xl font-semibold mb-2 group-hover:text-primary transition-colors">
                       {post.data.title}
@@ -111,13 +89,13 @@ const tagCounts: Record<string, number> = allTags.reduce(
                     {post.data.tags && post.data.tags.length > 0 && (
                       <div class="flex flex-wrap gap-2">
                         {post.data.tags.map((tag) => (
-                          <Badge variant="outline" size="sm" asChild>
-                            <a
-                              href={`/blog/tags/${tag}`}
-                              class="hover:bg-primary hover:text-primary-foreground transition-colors"
+                          <Badge variant="outline" size="sm">
+                            <button
+                              class="badge-tag hover:bg-primary hover:text-primary-foreground transition-colors tag-filter-btn"
+                              data-tag={tag}
                             >
                               {tag}
-                            </a>
+                            </button>
                           </Badge>
                         ))}
                       </div>
@@ -127,9 +105,61 @@ const tagCounts: Record<string, number> = allTags.reduce(
               ))
             }
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            baseUrl="/"
+          />
         </div>
-      </main>
+        </main>
+      </div>
     </div>
     <Footer />
+    
+    <style>
+      .tag-filter-btn.active {
+        background-color: hsl(var(--primary));
+        color: hsl(var(--primary-foreground));
+      }
+    </style>
+    
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const tagButtons = document.querySelectorAll('.tag-filter-btn') as NodeListOf<HTMLElement>;
+        const blogPosts = document.querySelectorAll('.blog-post') as NodeListOf<HTMLElement>;
+        
+        function filterPosts(selectedTag: string): void {
+          // Update active button state
+          tagButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.tag === selectedTag) {
+              btn.classList.add('active');
+            }
+          });
+          
+          // Filter posts
+          blogPosts.forEach(post => {
+            const postTags = post.dataset.tags ? post.dataset.tags.split(',') : [];
+            
+            if (selectedTag === 'all' || postTags.includes(selectedTag)) {
+              post.style.display = 'block';
+            } else {
+              post.style.display = 'none';
+            }
+          });
+        }
+        
+        // Add click event listeners to all tag buttons
+        tagButtons.forEach(button => {
+          button.addEventListener('click', function(e: Event) {
+            e.preventDefault();
+            const selectedTag = (this as HTMLElement).dataset.tag;
+            if (selectedTag) {
+              filterPosts(selectedTag);
+            }
+          });
+        });
+      });
+    </script>
   </body>
 </html>

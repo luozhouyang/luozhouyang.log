@@ -8,6 +8,8 @@ interface Props {
   class?: string;
   as?: string;
   href?: string;
+  disabled?: boolean;
+  asChild?: boolean;
   [key: string]: any;
 }
 
@@ -16,6 +18,8 @@ const {
   size = 'default',
   class: className = '',
   as: Component = 'button',
+  disabled = false,
+  asChild = false,
   ...rest
 } = Astro.props;
 
@@ -43,12 +47,14 @@ const classes = [
 ].join(' ');
 ---
 
-{Component === 'a' ? (
+{asChild ? (
+  <slot />
+) : Component === 'a' ? (
   <a class={classes} href={rest.href} {...rest}>
     <slot />
   </a>
 ) : (
-  <button class={classes} type={rest.type || 'button'} {...rest}>
+  <button class={classes} type={rest.type || 'button'} disabled={disabled} {...rest}>
     <slot />
   </button>
 )}

@@ -40,7 +40,7 @@ const { title, description, pubDate, updatedDate, tags = [] } = Astro.props;
                 <div class="flex flex-wrap justify-center gap-2 mb-6">
                   {tags.map((tag) => (
                     <Badge variant="secondary" asChild>
-                      <a href={`/blog/tags/${tag}`}>{tag}</a>
+                      <a href="/">{tag}</a>
                     </Badge>
                   ))}
                 </div>

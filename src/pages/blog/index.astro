@@ -54,7 +54,7 @@ const tagCounts: Record<string, number> = allTags.reduce((acc: Record<string, nu
 								</Button>
 								{allTags.map(tag => (
 									<Button variant="ghost" size="sm" class="w-full justify-between" asChild>
-										<a href={`/blog/tags/${tag}`}>
+										<a href="/">
 											<span>{tag}</span>
 											<Badge variant="secondary" class="ml-auto">{tagCounts[tag]}</Badge>
 										</a>
@@ -91,7 +91,7 @@ const tagCounts: Record<string, number> = allTags.reduce((acc: Record<string, nu
 											<div class="flex flex-wrap gap-2">
 												{post.data.tags.map(tag => (
 													<Badge variant="outline" size="sm" asChild>
-														<a href={`/blog/tags/${tag}`} class="hover:bg-primary hover:text-primary-foreground transition-colors">{tag}</a>
+														<a href="/" class="hover:bg-primary hover:text-primary-foreground transition-colors">{tag}</a>
 													</Badge>
 												))}
 											</div>

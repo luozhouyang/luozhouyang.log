@@ -1,0 +1,98 @@
+---
+import Card from "./ui/Card.astro";
+import CardContent from "./ui/CardContent.astro";
+import CardHeader from "./ui/CardHeader.astro";
+import CardTitle from "./ui/CardTitle.astro";
+import Button from "./ui/Button.astro";
+import Badge from "./ui/Badge.astro";
+
+interface Props {
+  allTags: string[];
+  tagCounts: Record<string, number>;
+  allPostsCount: number;
+}
+
+const { allTags, tagCounts, allPostsCount } = Astro.props;
+---
+
+<aside class="w-full flex flex-col">
+  <Card
+    class="shadow-lg border-border/50 h-96 flex flex-col backdrop-blur-sm bg-background/95"
+  >
+    <CardHeader class="pb-4 flex-shrink-0">
+      <CardTitle
+        class="text-lg font-semibold text-foreground flex items-center gap-2"
+      >
+        <svg
+          class="w-5 h-5 text-primary"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+          ></path>
+        </svg>
+        Tags
+      </CardTitle>
+    </CardHeader>
+    <CardContent class="pt-0 flex-1 overflow-hidden">
+      <div
+        class="space-y-1 overflow-y-auto max-h-full pr-2 -mr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          class="w-full justify-between h-9 px-3 py-1 hover:bg-accent hover:text-accent-foreground transition-all duration-200 group text-left tag-filter-btn active"
+          data-tag="all"
+        >
+          <span class="flex items-center gap-2">
+            <svg
+              class="w-4 h-4 opacity-60 group-hover:opacity-100"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              ></path>
+            </svg>
+            All Posts
+          </span>
+          <Badge
+            variant="secondary"
+            class="ml-auto group-hover:bg-primary-foreground group-hover:text-primary transition-colors"
+          >
+            {allPostsCount}
+          </Badge>
+        </Button>
+        {
+          allTags.map((tag) => (
+            <Button
+              variant="ghost"
+              size="sm"
+              class="w-full justify-between h-9 px-3 py-1 hover:bg-accent hover:text-accent-foreground transition-all duration-200 group text-left tag-filter-btn"
+              data-tag={tag}
+            >
+              <span class="text-sm font-medium capitalize truncate pr-2">
+                {tag}
+              </span>
+              <Badge
+                variant="outline"
+                class="ml-auto text-xs px-2 py-0.5 group-hover:border-accent-foreground/20 transition-colors"
+              >
+                {tagCounts[tag]}
+              </Badge>
+            </Button>
+          ))
+        }
+      </div>
+    </CardContent>
+  </Card>
+</aside>

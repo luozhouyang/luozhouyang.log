@@ -1,0 +1,30 @@
+---
+type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 'tel' | 'url' | 'date' | 'datetime-local' | 'month' | 'time' | 'week' | 'color' | 'file' | 'hidden' | 'range' | 'checkbox' | 'radio' | 'submit' | 'reset' | 'button';
+
+interface Props {
+  type?: InputType;
+  placeholder?: string;
+  class?: string;
+  value?: string;
+  [key: string]: any;
+}
+
+const {
+  type = 'text' as InputType,
+  placeholder = '',
+  class: className = '',
+  ...rest
+} = Astro.props;
+
+const classes = [
+  'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+  className,
+].join(' ');
+---
+
+<input
+  type={type}
+  placeholder={placeholder}
+  class={classes}
+  {...rest}
+/>

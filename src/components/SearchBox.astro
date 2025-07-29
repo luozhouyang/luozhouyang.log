@@ -1,0 +1,126 @@
+---
+import Input from './ui/Input.astro';
+import Button from './ui/Button.astro';
+---
+
+<div class="relative">
+  <div class="flex gap-2">
+    <div class="relative flex-1">
+      <svg
+        class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="m21 21-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"
+        ></path>
+      </svg>
+      <Input
+        id="search-input"
+        type="text"
+        placeholder="Search blog posts..."
+        class="pl-10 h-8"
+      />
+    </div>
+    <Button
+      id="clear-search"
+      variant="outline"
+      size="sm"
+      class="hidden h-8"
+    >
+      Clear
+    </Button>
+  </div>
+  <div id="search-results" class="absolute top-full left-0 right-0 mt-2 bg-background border rounded-md shadow-lg z-50 text-sm text-muted-foreground hidden">
+    <div class="p-2">
+      <span id="results-count"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Client-side search functionality
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const clearButton = document.getElementById('clear-search') as HTMLButtonElement;
+  const resultsCount = document.getElementById('results-count') as HTMLElement;
+  const searchResults = document.getElementById('search-results') as HTMLElement;
+  const articles = document.querySelectorAll('article');
+  
+  let allPosts: Array<{
+    element: Element;
+    title: string;
+    description: string;
+    tags: string[];
+  }> = [];
+  
+  // Initialize posts data
+  articles.forEach(article => {
+    const titleElement = article.querySelector('h2');
+    const descriptionElement = article.querySelector('p');
+    const tagElements = article.querySelectorAll('.badge-tag');
+    
+    if (titleElement && descriptionElement) {
+      const title = titleElement.textContent?.toLowerCase() || '';
+      const description = descriptionElement.textContent?.toLowerCase() || '';
+      const tags = Array.from(tagElements).map(tag => tag.textContent?.toLowerCase() || '');
+      
+      allPosts.push({
+        element: article,
+        title,
+        description,
+        tags
+      });
+    }
+  });
+  
+  function performSearch(query: string) {
+    const searchTerm = query.toLowerCase().trim();
+    
+    if (!searchTerm) {
+      // Show all posts
+      allPosts.forEach(post => {
+        (post.element as HTMLElement).style.display = 'block';
+      });
+      clearButton.classList.add('hidden');
+      searchResults.classList.add('hidden');
+      return;
+    }
+    
+    let visibleCount = 0;
+    
+    allPosts.forEach(post => {
+      const matchesTitle = post.title.includes(searchTerm);
+      const matchesDescription = post.description.includes(searchTerm);
+      const matchesTags = post.tags.some(tag => tag.includes(searchTerm));
+      
+      if (matchesTitle || matchesDescription || matchesTags) {
+        (post.element as HTMLElement).style.display = 'block';
+        visibleCount++;
+      } else {
+        (post.element as HTMLElement).style.display = 'none';
+      }
+    });
+    
+    // Show results count and clear button
+    clearButton.classList.remove('hidden');
+    searchResults.classList.remove('hidden');
+    resultsCount.textContent = `Found ${visibleCount} post${visibleCount !== 1 ? 's' : ''} matching "${query}"`;
+  }
+  
+  // Search input event listener
+  searchInput?.addEventListener('input', (e) => {
+    const target = e.target as HTMLInputElement;
+    performSearch(target.value);
+  });
+  
+  // Clear search event listener
+  clearButton?.addEventListener('click', () => {
+    searchInput.value = '';
+    performSearch('');
+  });
+</script>
