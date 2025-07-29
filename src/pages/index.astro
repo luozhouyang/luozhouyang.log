@@ -1,72 +1,135 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import Card from '../components/ui/Card.astro';
-import CardHeader from '../components/ui/CardHeader.astro';
-import CardTitle from '../components/ui/CardTitle.astro';
-import CardDescription from '../components/ui/CardDescription.astro';
-import CardContent from '../components/ui/CardContent.astro';
-import CardFooter from '../components/ui/CardFooter.astro';
-import Button from '../components/ui/Button.astro';
+import { getCollection } from "astro:content";
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
+import FormattedDate from "../components/FormattedDate.astro";
+import Header from "../components/Header.astro";
+import Badge from "../components/ui/Badge.astro";
+import Button from "../components/ui/Button.astro";
+import Card from "../components/ui/Card.astro";
+import CardContent from "../components/ui/CardContent.astro";
+import CardHeader from "../components/ui/CardHeader.astro";
+import CardTitle from "../components/ui/CardTitle.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+
+const posts = (await getCollection("blog")).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+// Get all unique tags
+const allTags = [
+  ...new Set(posts.flatMap((post) => post.data.tags || [])),
+].sort();
+
+// Count posts per tag
+const tagCounts: Record<string, number> = allTags.reduce(
+  (acc: Record<string, number>, tag: string) => {
+    const count = posts.filter((post) => post.data.tags?.includes(tag)).length;
+    acc[tag] = count;
+    return acc;
+  },
+  {}
+);
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body class="min-h-screen bg-background font-sans antialiased">
-		<Header />
-		<main class="container py-10">
-			<div class="mx-auto max-w-3xl space-y-8">
-				<div class="text-center">
-					<h1 class="text-4xl font-bold tracking-tight sm:text-5xl mb-4">🧑‍🚀 Hello, Astronaut!</h1>
-					<p class="text-xl text-muted-foreground">
-						Welcome to the official <a href="https://astro.build/" class="text-primary hover:underline">Astro</a> blog starter template with shadcn UI.
-					</p>
-				</div>
-
-				<Card>
-					<CardHeader>
-						<CardTitle>About this template</CardTitle>
-						<CardDescription>
-							A lightweight, minimally-styled starting point for anyone looking to build a personal website, blog, or portfolio with Astro.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div class="space-y-4">
-							<p>
-								This template comes with a few integrations already configured in your
-								<code class="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">astro.config.mjs</code> file. You can customize your setup with
-								<a href="https://astro.build/integrations" class="text-primary hover:underline">Astro Integrations</a> to add tools like Tailwind,
-								React, or Vue to your project.
-							</p>
-							
-							<div>
-								<h3 class="text-lg font-medium mb-2">Here are a few ideas on how to get started with the template:</h3>
-								<ul class="list-disc pl-6 space-y-2">
-									<li>Edit this page in <code class="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">src/pages/index.astro</code></li>
-									<li>Edit the site header items in <code class="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">src/components/Header.astro</code></li>
-									<li>Add your name to the footer in <code class="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">src/components/Footer.astro</code></li>
-									<li>Check out the included blog posts in <code class="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">src/content/blog/</code></li>
-									<li>Customize the blog post page layout in <code class="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">src/layouts/BlogPost.astro</code></li>
-								</ul>
-							</div>
-						</div>
-					</CardContent>
-					<CardFooter class="flex justify-between">
-						<Button variant="outline" asChild>
-							<a href="https://docs.astro.build/">Read the docs</a>
-						</Button>
-						<Button asChild>
-							<a href="/blog/">Visit the blog</a>
-						</Button>
-					</CardFooter>
-				</Card>
-			</div>
-		</main>
-		<Footer />
-	</body>
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+  <body class="min-h-screen bg-background font-sans antialiased">
+    <Header />
+    <div
+      class="container grid grid-cols-1 gap-12 md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr] py-8"
+    >
+      {
+        allTags.length > 0 && (
+          <aside class="hidden w-full flex-col md:flex">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tags</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div class="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="w-full justify-between"
+                    asChild
+                  >
+                    <a href="/" class="font-medium">
+                      <span>All Posts</span>
+                      <Badge variant="secondary" class="ml-auto">
+                        {posts.length}
+                      </Badge>
+                    </a>
+                  </Button>
+                  {allTags.map((tag) => (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="w-full justify-between"
+                      asChild
+                    >
+                      <a href={`/blog/tags/${tag}`}>
+                        <span>{tag}</span>
+                        <Badge variant="secondary" class="ml-auto">
+                          {tagCounts[tag]}
+                        </Badge>
+                      </a>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
+        )
+      }
+      <main class="space-y-6">
+        <div class="space-y-8">
+          <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-4">Blog</h1>
+            <p class="text-lg text-muted-foreground">
+              Welcome to my blog! Here you'll find articles about web
+              development, technology, and other topics I'm passionate about.
+            </p>
+          </div>
+          <div class="space-y-6">
+            {
+              posts.map((post) => (
+                <article class="border-b border-border pb-6 last:border-b-0">
+                  <a href={`/blog/${post.id}/`} class="block group">
+                    <h2 class="text-2xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {post.data.title}
+                    </h2>
+                    <div class="text-sm text-muted-foreground mb-3">
+                      <FormattedDate date={post.data.pubDate} />
+                    </div>
+                    <p class="text-muted-foreground mb-4 leading-relaxed">
+                      {post.data.description}
+                    </p>
+                    {post.data.tags && post.data.tags.length > 0 && (
+                      <div class="flex flex-wrap gap-2">
+                        {post.data.tags.map((tag) => (
+                          <Badge variant="outline" size="sm" asChild>
+                            <a
+                              href={`/blog/tags/${tag}`}
+                              class="hover:bg-primary hover:text-primary-foreground transition-colors"
+                            >
+                              {tag}
+                            </a>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </a>
+                </article>
+              ))
+            }
+          </div>
+        </div>
+      </main>
+    </div>
+    <Footer />
+  </body>
 </html>
