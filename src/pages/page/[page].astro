@@ -64,12 +64,23 @@ const tagCounts: Record<string, number> = allTags.reduce(
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="light">
   <head>
     <BaseHead
       title={`Page ${currentPage} - ${SITE_TITLE}`}
       description={SITE_DESCRIPTION}
     />
+    <script is:inline>
+      // 在页面加载前检查主题设置
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
   </head>
   <body class="min-h-screen bg-background font-sans antialiased flex flex-col">
     <Header />
@@ -79,7 +90,7 @@ const tagCounts: Record<string, number> = allTags.reduce(
       {
         allTags.length > 0 && (
           <aside class="hidden w-full flex-col md:flex">
-            <Card>
+            <Card class="dark:bg-background">
               <CardHeader>
                 <CardTitle>Tags</CardTitle>
               </CardHeader>
@@ -123,11 +134,11 @@ const tagCounts: Record<string, number> = allTags.reduce(
         <div class="space-y-8">
           <div class="text-center mb-8">
             <h1 class="text-4xl font-bold mb-4">Blog</h1>
-            <p class="text-lg text-muted-foreground">
+            <p class="text-lg text-muted-foreground dark:text-white/90">
               Welcome to my blog! Here you'll find articles about web
               development, technology, and other topics I'm passionate about.
             </p>
-            <p class="text-sm text-muted-foreground mt-2">
+            <p class="text-sm text-muted-foreground mt-2 dark:text-white/95">
               Page {currentPage} of {totalPages}
             </p>
           </div>
@@ -137,13 +148,13 @@ const tagCounts: Record<string, number> = allTags.reduce(
               posts.map((post: any) => (
                 <article class="border-b border-border pb-6 last:border-b-0">
                   <a href={`/blog/${post.id}/`} class="block group">
-                    <h2 class="text-2xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                    <h2 class="text-2xl font-semibold mb-2 group-hover:text-primary transition-colors dark:text-white dark:group-hover:text-accent-dark">
                       {post.data.title}
                     </h2>
-                    <div class="text-sm text-muted-foreground mb-3">
+                    <div class="text-sm text-muted-foreground mb-3 dark:text-white/95">
                       <FormattedDate date={post.data.pubDate} />
                     </div>
-                    <p class="text-muted-foreground mb-4 leading-relaxed">
+                    <p class="text-muted-foreground mb-4 leading-relaxed dark:text-white/95">
                       {post.data.description}
                     </p>
                     {post.data.tags && post.data.tags.length > 0 && (

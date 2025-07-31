@@ -40,9 +40,20 @@ const tagCounts: Record<string, number> = allTags.reduce(
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="light">
   <head>
     <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <script is:inline>
+      // 在页面加载前检查主题设置
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
   </head>
   <body class="min-h-screen bg-background font-sans antialiased flex flex-col">
     <Header />
@@ -77,13 +88,13 @@ const tagCounts: Record<string, number> = allTags.reduce(
                   data-tags={post.data.tags ? post.data.tags.join(',') : ''}
                 >
                   <a href={`/blog/${post.id}/`} class="block group">
-                    <h2 class="text-2xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                    <h2 class="text-2xl font-semibold mb-2 group-hover:text-primary transition-colors dark:text-white dark:group-hover:text-accent-dark">
                       {post.data.title}
                     </h2>
-                    <div class="text-sm text-muted-foreground mb-3">
+                    <div class="text-sm text-muted-foreground mb-3 dark:text-white/95">
                       <FormattedDate date={post.data.pubDate} />
                     </div>
-                    <p class="text-muted-foreground mb-4 leading-relaxed">
+                    <p class="text-muted-foreground mb-4 leading-relaxed dark:text-white/95">
                       {post.data.description}
                     </p>
                     {post.data.tags && post.data.tags.length > 0 && (

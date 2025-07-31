@@ -7,7 +7,7 @@ interface Props {
 const { class: className = '', ...rest } = Astro.props;
 
 const classes = [
-  'rounded-lg border bg-card text-card-foreground shadow-sm',
+  'rounded-lg border bg-card text-card-foreground shadow-sm dark:border-border',
   className,
 ].join(' ');
 ---

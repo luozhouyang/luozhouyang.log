@@ -3,6 +3,7 @@ import HeaderLink from './HeaderLink.astro';
 import { SITE_TITLE } from '../consts';
 import Button from './ui/Button.astro';
 import SearchBox from './SearchBox.astro';
+import ThemeToggle from './ui/ThemeToggle.astro';
 ---
 
 <header class="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -12,6 +13,7 @@ import SearchBox from './SearchBox.astro';
 			<div class="hidden md:block w-80">
 				<SearchBox />
 			</div>
+			<ThemeToggle />
 			<!-- <Button variant="ghost" size="sm" as="a" href="/">Home</Button> -->
 			<!-- <Button variant="ghost" size="sm" as="a" href="/about">About</Button> -->
 		</div>

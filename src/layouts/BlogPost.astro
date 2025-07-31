@@ -11,18 +11,29 @@ type Props = CollectionEntry<"blog">["data"];
 const { title, description, pubDate, updatedDate, tags = [] } = Astro.props;
 ---
 
-<html lang="en">
+<html lang="en" class="light">
   <head>
     <BaseHead title={title} description={description} />
+    <script is:inline>
+      // 在页面加载前检查主题设置
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
   </head>
 
   <body class="min-h-screen bg-background font-sans antialiased">
     <Header />
     <main class="container py-10">
       <article class="mx-auto max-w-3xl">
-        <div class="prose prose-lg dark:prose-invert max-w-none">
+        <div class="prose prose-base dark:prose-invert max-w-none dark:text-opacity-100 dark:text-white">
           <div class="mb-8 text-center">
-            <div class="text-muted-foreground mb-2">
+            <div class="text-muted-foreground mb-2 dark:text-white/90">
               <FormattedDate date={pubDate} />
               {
                 updatedDate && (
