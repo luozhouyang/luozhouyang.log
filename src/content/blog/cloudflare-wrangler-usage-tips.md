@@ -181,3 +181,143 @@ declare namespace Cloudflare {
 interface CloudflareBindings extends Cloudflare.Env {}
 
 ```
+
+## Service Binding的Dispose实践
+
+wrangler 4.x是支持使用`using`关键字来隐式dispose的。但是在写代码过程中会遇要报错，类似于`Object cannot be disposed`。
+
+观察`tsconfig.ts`文件，发现:
+
+```json
+{
+    "compilerOptions": {
+        "target": "ES2017"
+    }
+}
+```
+在这种情况下，想要在客户端Workers里进行dispose，一种可行的方案是**显式地调用dispose方法**。代码举例(nextjs)：
+```typescript
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+
+export async function runRpcUserService<T>(
+  callback: (userService: IUserService) => Promise<T>
+) {
+  const { env } = getCloudflareContext();
+  // @ts-expect-error: ignore type error
+  const userService = (await env.PICKNAMES_CORE.getUserService()) as IUserService;
+  try {
+    return await callback(userService);
+  } finally {
+    userService[Symbol.dispose];
+  }
+}
+
+export async function runRpcChannelService<T>(
+  callback: (channelService: IChannelService) => Promise<T>
+) {
+  const { env } = getCloudflareContext();
+  // @ts-expect-error: ignore type error
+  const channelService =(await env.PICKNAMES_CORE.getChannelService()) as IChannelService;
+  try {
+    return await callback(channelService);
+  } finally {
+    channelService[Symbol.dispose];
+  }
+}
+
+```
+
+但是这样会出现以下问题：在`build`时，出现`Error: Expected an assignment or function call and instead saw an expression.`
+
+所以修改成：
+* `userService[Symbol.dispose]` -> `userService[Symbol.dispose]()`
+* `channelService[Symbol.dispose]` -> `channelService[Symbol.dispose]()`
+
+在build阶段，上述错误不会出现了。但是在运行阶段，即`npm run build`，会出现以下错误：
+* `TypeError: r[Symbol.dispose] is not a function`
+
+
+经过分析，可以判断是 `as IUserService` 和 `as IChannelService` 类型转换导致的错误。因为这两个接口类型并不是一个`Disposeable`，所以在编译或者运行时出现dispose相关的错误。
+
+
+参考Cloudflare官方文档：[Use RpcTarget class to handle Durable Object metadata](https://developers.cloudflare.com/durable-objects/examples/reference-do-name-using-init/)
+有一段代码：
+```typescript
+export default {
+  async fetch(request, env, ctx): Promise<Response> {
+    let id: DurableObjectId = env.MY_DURABLE_OBJECT.idFromName(
+      new URL(request.url).pathname,
+    );
+    let stub = env.MY_DURABLE_OBJECT.get(id);
+
+    //  * Set the Durable Object metadata using the RpcTarget
+    //  * Notice that no await is needed here
+
+    const rpcTarget = stub.setMetaData(id.name ?? "default");
+
+    // Call the Durable Object method using the RpcTarget.
+    // The DO identifier is stored in the Durable Object's storage
+    const greeting = await rpcTarget.computeMessage("world");
+
+    // Call the Durable Object method that does not use the Durable Object identifier
+    const simpleGreeting = await rpcTarget.simpleGreeting("world");
+
+    // Clean up the RpcTarget.
+    try {
+      (await rpcTarget)[Symbol.dispose]?.();
+      console.log("RpcTarget cleaned up.");
+    } catch (e) {
+      console.error({
+        message: "RpcTarget could not be cleaned up.",
+        error: String(e),
+        errorProperties: e,
+      });
+    }
+
+    return new Response(greeting, { status: 200 });
+  },
+} satisfies ExportedHandler<Env>;
+```
+
+所以把上述代码改成：
+```typescript
+export async function runRpcUserService<T>(
+  callback: (userService: IUserService) => Promise<T>
+) {
+  const { env } = getCloudflareContext();
+  // @ts-expect-error: ignore type error
+  const userService = await env.PICKNAMES_CORE.getUserService();
+  try {
+    return await callback(userService);
+  } finally {
+    // if (typeof userService[Symbol.dispose] === 'function') {
+    //   userService[Symbol.dispose]();
+    // }
+    (await userService)[Symbol.dispose]?.();
+  }
+}
+
+export async function runRpcChannelService<T>(
+  callback: (channelService: IChannelService) => Promise<T>
+) {
+  const { env } = getCloudflareContext();
+  // @ts-expect-error: ignore type error
+  const channelService = await env.PICKNAMES_CORE.getChannelService();
+  try {
+    return await callback(channelService);
+  } catch (e) {
+    console.error(e);
+  } finally {
+    // if (typeof channelService[Symbol.dispose] === 'function') {
+    //   channelService[Symbol.dispose]();
+    // }
+    (await channelService)[Symbol.dispose]?.();
+  }
+}
+```
+
+这种做法相比之前：
+* 移除了类型转换带来的问题
+* 虽然RPC调用返回的类型为`any`，但是通过`callback`参数为其定义了具体类型，调用方依然能够获得类型提示。
+
+问题解决。
