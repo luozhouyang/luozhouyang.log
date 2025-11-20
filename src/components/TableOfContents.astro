@@ -1,0 +1,136 @@
+---
+interface Props {
+  headings?: Array<{
+    depth: number;
+    text: string;
+    slug: string;
+  }>;
+}
+
+const { headings = [] } = Astro.props;
+---
+<aside class="sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin w-64">
+  <div class="space-y-2">
+    <h3 id="toc-heading" class="text-sm font-semibold text-foreground mb-4">Table of Contents</h3>
+    <nav id="toc-nav" class="space-y-1" aria-labelledby="toc-heading" role="navigation">
+      <div class="text-sm text-muted-foreground">Loading...</div>
+    </nav>
+  </div>
+</aside>
+
+<script>
+  // Extract headings from the article content and generate TOC
+  function generateTableOfContents() {
+    const article = document.querySelector('article');
+    if (!article) return;
+
+    const headings = article.querySelectorAll('h1, h2, h3, h4');
+    const tocNav = document.getElementById('toc-nav');
+    
+    if (headings.length === 0 || !tocNav) return;
+
+    // Clear loading state
+    tocNav.innerHTML = '';
+
+    headings.forEach((heading) => {
+      // Skip the main title (h1)
+      if (heading.tagName === 'H1' && heading.textContent === document.querySelector('h1')?.textContent) {
+        return;
+      }
+
+      const depth = parseInt(heading.tagName.substring(1));
+      const text = heading.textContent || '';
+      
+      // Generate slug if not exists
+      let slug = heading.id;
+      if (!slug) {
+        slug = text
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/[\s_-]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        heading.id = slug;
+      }
+
+      const link = document.createElement('a');
+      link.href = `#${slug}`;
+      link.textContent = text;
+      link.className = `
+        block text-sm transition-colors hover:text-foreground break-words
+        ${depth === 1 ? 'font-medium text-foreground ml-0' : ''}
+        ${depth === 2 ? 'text-muted-foreground hover:text-foreground ml-3' : ''}
+        ${depth === 3 ? 'text-muted-foreground hover:text-foreground ml-6' : ''}
+        ${depth === 4 ? 'text-muted-foreground hover:text-foreground ml-9' : ''}
+      `;
+
+      tocNav.appendChild(link);
+    });
+
+    // Add smooth scroll behavior
+    document.querySelectorAll('#toc-nav a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href')?.substring(1);
+        if (!targetId) return;
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Observe headings to highlight active section in TOC
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const id = entry.target.getAttribute('id');
+        if (!id) return;
+        const currentLink = tocNav.querySelector(`a[href="#${id}"]`);
+        if (!currentLink) return;
+        if (entry.isIntersecting) {
+          tocNav.querySelectorAll('a[aria-current="true"]').forEach(a => a.setAttribute('aria-current', 'false'));
+          currentLink.setAttribute('aria-current', 'true');
+        }
+      });
+    }, {
+      rootMargin: '0px 0px -70% 0px',
+      threshold: 0.1,
+    });
+
+    headings.forEach(h => observer.observe(h));
+  }
+
+  // Generate TOC when DOM is loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', generateTableOfContents);
+  } else {
+    generateTableOfContents();
+  }
+</script>
+
+<style>
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--border) / 0.8);
+  }
+  /* Highlight active TOC link */
+  #toc-nav a[aria-current="true"] {
+    color: hsl(var(--foreground));
+    font-weight: 600;
+  }
+</style>

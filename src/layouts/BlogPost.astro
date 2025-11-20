@@ -5,6 +5,7 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import FormattedDate from "../components/FormattedDate.astro";
 import Badge from "../components/ui/Badge.astro";
+import TableOfContents from "../components/TableOfContents.astro";
 
 type Props = CollectionEntry<"blog">["data"];
 
@@ -29,10 +30,13 @@ const { title, description, pubDate, updatedDate, tags = [] } = Astro.props;
 
   <body class="min-h-screen bg-background font-sans antialiased">
     <Header />
-    <main class="container py-10">
-      <article class="mx-auto max-w-3xl">
+    <main class="container grid grid-cols-1 gap-12 md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr] py-8">
+      <aside class="hidden md:block">
+        <TableOfContents />
+      </aside>
+      <article class="max-w-3xl">
         <div class="prose prose-base dark:prose-invert max-w-none dark:text-opacity-100 dark:text-white">
-          <div class="mb-8 text-center">
+          <div class="mb-8">
             <div class="text-muted-foreground mb-2 dark:text-white/90">
               <FormattedDate date={pubDate} />
               {
@@ -48,7 +52,7 @@ const { title, description, pubDate, updatedDate, tags = [] } = Astro.props;
             </h1>
             {
               tags.length > 0 && (
-                <div class="flex flex-wrap justify-center gap-2 mb-6">
+                <div class="flex flex-wrap gap-2 mb-6">
                   {tags.map((tag) => (
                     <Badge variant="secondary" asChild>
                       <a href="/">{tag}</a>
