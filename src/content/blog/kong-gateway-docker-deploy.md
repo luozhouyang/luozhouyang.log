@@ -1,7 +1,7 @@
 ---
-title: 'Deploy Kong gateway with Docker'
-description: 'Deploy kong gateway with Docker'
-pubDate: 'Sep 20 2025'
+title: '在Docker部署Kong Gateway'
+description: '在Docker上部署Kong Gateway并且提供安全的Kong Manager UI访问'
+pubDate: 'Nov 20 2025'
 tags: ['Kong', 'Docker']
 ---
 
